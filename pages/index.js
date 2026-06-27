@@ -336,24 +336,22 @@ export default function Home() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setAuthReady(true)
-      if (session) fetchUsage(session.user.id, session.access_token)
+      if (session) fetchUsage()
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
-      if (session) fetchUsage(session.user.id, session.access_token)
+      if (session) fetchUsage()
       else setUsageCount(0)
     })
     return () => subscription.unsubscribe()
   }, [])
 
-  const fetchUsage = async (userId, token) => {
+  const fetchUsage = async () => {
     const monthYear = new Date().toISOString().slice(0, 7)
-    const client = require('@supabase/supabase-js').createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      { global: { headers: { Authorization: `Bearer ${token}` } } }
-    )
-    const { count } = await client.from('usage').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('month_year', monthYear)
+    const { count } = await supabase
+      .from('usage')
+      .select('*', { count: 'exact', head: true })
+      .eq('month_year', monthYear)
     setUsageCount(count || 0)
   }
 
